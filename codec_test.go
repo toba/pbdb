@@ -4,8 +4,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"toba.io/lib/db"
-	"toba.io/lib/db/schema"
+	"github.com/toba/pbdb"
+	"github.com/toba/pbdb/schema"
 )
 
 var (

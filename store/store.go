@@ -1,7 +1,7 @@
 // Package store defines the shape of data to be stored in the database.
 package store
 
-import "toba.io/lib/db/index"
+import "github.com/toba/pbdb/index"
 
 type (
 	// Item is a key and value. The value is a struct matching the

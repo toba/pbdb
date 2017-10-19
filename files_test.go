@@ -1,1 +1,1 @@
-package db_test
+package pbdb_test

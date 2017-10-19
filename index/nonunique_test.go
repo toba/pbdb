@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"toba.io/lib/db/index"
+	"github.com/toba/pbdb/index"
 )
 
 // repeats maps value keys to multiple item keys. The index of the outer

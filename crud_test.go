@@ -7,9 +7,9 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/toba/pbdb"
+	"github.com/toba/pbdb/index"
 	"toba.io/lib/config"
-	"toba.io/lib/db"
-	"toba.io/lib/db/index"
 )
 
 type TestSchema struct {

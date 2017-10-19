@@ -1,6 +1,6 @@
 package schema
 
-import "toba.io/lib/db/index"
+import "github.com/toba/pbdb/index"
 
 var (
 	employeeBucketName = []byte("EmployeeBucket")

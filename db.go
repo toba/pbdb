@@ -1,5 +1,5 @@
 // Package db creates and verifies BoltDB database files.
-package db
+package pbdb
 
 import (
 	"toba.io/lib/config"

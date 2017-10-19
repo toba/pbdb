@@ -1,6 +1,6 @@
 package relation
 
-import "toba.io/lib/db/index"
+import "github.com/toba/pbdb/index"
 
 type (
 	OneToMany struct {

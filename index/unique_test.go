@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"toba.io/lib/db/index"
+	"github.com/toba/pbdb/index"
 	"toba.io/lib/oops"
 
 	"github.com/stretchr/testify/assert"

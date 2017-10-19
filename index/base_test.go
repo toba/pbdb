@@ -4,8 +4,8 @@ import (
 	"io/ioutil"
 	"os"
 
-	"toba.io/lib/db"
-	"toba.io/lib/db/key"
+	"github.com/toba/pbdb"
+	"github.com/toba/pbdb/key"
 )
 
 var (

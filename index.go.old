@@ -1,6 +1,6 @@
-package db
+package pbdb
 
-import "toba.io/lib/db/index"
+import "github.com/toba/pbdb/index"
 
 // saveIndexes iterates over indexable values indicated for a store.Value
 // and saves or updates them.

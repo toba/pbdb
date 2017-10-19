@@ -3,8 +3,8 @@
 package db
 
 import (
-	"toba.io/lib/db/key"
-	"toba.io/lib/db/store"
+	"github.com/toba/pbdb/key"
+	"github.com/toba/pbdb/store"
 
 	"github.com/boltdb/bolt"
 )

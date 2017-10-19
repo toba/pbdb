@@ -2,7 +2,7 @@ package index
 
 import (
 	"github.com/boltdb/bolt"
-	"toba.io/lib/db/key"
+	"github.com/toba/pbdb/key"
 	"toba.io/lib/oops"
 )
 

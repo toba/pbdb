@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"toba.io/lib/db/key"
+	"github.com/toba/pbdb/key"
 )
 
 var (

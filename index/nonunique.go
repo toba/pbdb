@@ -3,7 +3,7 @@ package index
 import (
 	"bytes"
 
-	"toba.io/lib/db/key"
+	"github.com/toba/pbdb/key"
 	"toba.io/lib/oops"
 )
 

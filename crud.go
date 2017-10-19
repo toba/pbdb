@@ -1,10 +1,10 @@
-package db
+package pbdb
 
 import (
 	"github.com/boltdb/bolt"
-	"toba.io/lib/db/index"
-	"toba.io/lib/db/key"
-	"toba.io/lib/db/store"
+	"github.com/toba/pbdb/index"
+	"github.com/toba/pbdb/key"
+	"github.com/toba/pbdb/store"
 )
 
 type (
