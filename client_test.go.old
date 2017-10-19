@@ -1,0 +1,83 @@
+package db_test
+
+import (
+	"io/ioutil"
+	"os"
+	"testing"
+
+	"toba.io/lib/config"
+	"toba.io/lib/db"
+	"toba.io/lib/db/schema"
+
+	"github.com/stretchr/testify/assert"
+)
+
+func TestMain(m *testing.M) {
+	cfg := config.Database{
+		Path: "",
+		Name: "test.db",
+	}
+	dir, _ := ioutil.TempDir(os.TempDir(), "toba")
+
+	defer os.RemoveAll(dir)
+
+	cfg.Path = dir
+	db.Initialize(cfg)
+
+	result := m.Run()
+
+	db.Reset()
+	os.Exit(result)
+}
+
+// connect creates temporary database files in OS standard temporary location.
+func connect(t *testing.T, fn func(*db.Client)) {
+	c, err := db.System()
+	assert.NoError(t, err)
+
+	defer c.Close()
+
+	fn(c)
+}
+
+func TestConnect(t *testing.T) {
+	connect(t, func(c *db.Client) {
+		assert.True(t, c.IsConnected)
+	})
+}
+
+func TestAdd(t *testing.T) {
+	connect(t, func(c *db.Client) {
+		key, err := c.Add(employee.Value)
+
+		assert.NoError(t, err)
+		assert.Len(t, key, 16)
+	})
+}
+
+func TestGet(t *testing.T) {
+	connect(t, func(c *db.Client) {
+		key, err := c.Add(employee.Value)
+
+		assert.NoError(t, err)
+		assert.Len(t, key, 16)
+
+		out := &schema.Employee{}
+		err = c.Get(key, out)
+
+		assert.NoError(t, err)
+		assert.Equal(t, firstName, out.FirstName)
+		assert.Equal(t, lastName, out.LastName)
+		assert.Equal(t, employeeNumber, out.Number)
+	})
+}
+
+func TestDelete(t *testing.T) {
+	connect(t, func(c *db.Client) {
+		key, err := c.Add(employee.Value)
+		assert.NoError(t, err)
+
+		err = c.Remove(key, &schema.Employee{})
+		assert.NoError(t, err)
+	})
+}

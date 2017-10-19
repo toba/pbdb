@@ -1,0 +1,50 @@
+package db
+
+import "toba.io/lib/db/index"
+
+// saveIndexes iterates over indexable values indicated for a store.Value
+// and saves or updates them.
+func (c *Client) saveIndexes(key []byte, indexes index.Map) error {
+	if indexes.Definitions == nil || len(indexes.Definitions) == 0 {
+		return nil
+	}
+	var idx index.Index
+
+	for _, d := range indexes.Definitions {
+		if d.Unique {
+			idx = c.GetUniqueIndex(d.BucketName)
+		} else {
+			idx = c.GetNonUniqueIndex(d.BucketName)
+		}
+		err := idx.Add(key, d.Value)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// MakeUnique creates an index that
+func (c *Client) MakeUniqueIndex(indexName []byte) (*index.Unique, error) {
+	return index.MakeUnique(c.Tx, indexName)
+}
+
+// UniqueIndex returns a pointer to the named, unique index.
+func (c *Client) GetUniqueIndex(indexName []byte) *index.Unique {
+	return index.GetUnique(c.Tx, indexName)
+}
+
+// MakeNonUniqueIndex creates an index allowing multiple values to reference the same item key.
+func (c *Client) MakeNonUniqueIndex(indexName []byte) (*index.NonUnique, error) {
+	return index.MakeNonUnique(c.Tx, indexName)
+}
+
+// NonUniqueIndex returns a pointer to the named, non-unique index.
+func (c *Client) GetNonUniqueIndex(indexName []byte) *index.NonUnique {
+	return index.GetNonUnique(c.Tx, indexName)
+}
+
+// MakeRelation creates an index relating one item to another.
+// func (c *Client) MakeRelation(indexName string) (*index.Relation, error) {
+// 	return index.MakeRelation(c.Tx, indexName)
+// }

@@ -1,0 +1,206 @@
+// Package client is used to interact with BoltDB database files which have
+// been created and verified with db package methods.
+package db
+
+import (
+	"toba.io/lib/db/key"
+	"toba.io/lib/db/store"
+
+	"github.com/boltdb/bolt"
+)
+
+type (
+	// Client is a connection to a BoltDB file using current db.Path.
+	Client struct {
+		// IsConnected indicates whether the database file is currently open.
+		IsConnected bool
+		// Tx is the active transaction.
+		Tx   *bolt.Tx
+		bolt *bolt.DB
+	}
+	runnable func() error
+)
+
+// makeClient creates Client for a bolt connection.
+func makeClient(boltDB *bolt.DB, err error) (*Client, error) {
+	if err != nil {
+		return nil, err
+	}
+	return &Client{
+		bolt:        boltDB,
+		IsConnected: true,
+	}, nil
+}
+
+// connectFile creates a Client connection to the database file at the given
+// path. If the file does not exist, it will be created.
+func connectFile(file DataFile) (*Client, error) {
+	return makeClient(Open(file))
+}
+
+// Tenant returns client connection for a specific tenant.
+func Tenant(tenantID []byte) (*Client, error) {
+	if !key.IsValid(tenantID) {
+		return nil, ErrInvalidTenant
+	}
+	return makeClient(OpenFile(key.ToString(tenantID)))
+}
+
+// System returns a connection to the system database.
+func System() (*Client, error) {
+	return connectFile(SystemFile)
+}
+
+// Log returns a connection to the log database.
+func Log() (*Client, error) {
+	return connectFile(LogFile)
+}
+
+// SystemReader connects to the system database and opens a read-only
+// transaction.
+func SystemReader(fn runnable) error {
+	c, err := System()
+	if err != nil {
+		return err
+	}
+	defer c.Close()
+	return c.Reader(fn)
+}
+
+// SystemWriter connects to the system database and opens a writable
+// transaction.
+func SystemWriter(fn runnable) error {
+	c, err := System()
+	if err != nil {
+		return err
+	}
+	defer c.Close()
+	return c.Writer(fn)
+}
+
+// LogWriter connects to the log database and opens a writable transaction.
+func LogWriter(fn runnable) error {
+	c, err := Log()
+	if err != nil {
+		return err
+	}
+	defer c.Close()
+	return c.Writer(fn)
+}
+
+// Add value to Bolt storage with a generated key.
+func (c *Client) Add(value store.Value) ([]byte, error) {
+	k, err := key.Create()
+	if err != nil {
+		return nil, err
+	}
+	return k, c.save(k, value)
+}
+
+// func Save(path string, value store.Value) ([]byte, error) {
+// 	c, err := connect(path)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	defer c.Close()
+
+// 	bucketName, err := db.BucketName(value)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	key, err := key.Create()
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	v, err := db.Encode(value)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+
+// 	c.Writer(func() error {
+// 		bucket, err := c.Tx.CreateBucketIfNotExists(bucketName)
+// 		if err != nil {
+// 			return err
+// 		}
+// 		err = bucket.Put(key, v)
+// 		if err != nil {
+// 			return err
+// 		}
+// 		c.saveIndexes(value.IndexMap())
+
+// 		return nil
+// 	})
+
+// 	return key, err
+//}
+
+// Writer adds a writable transaction to the client and executes a callback.
+// The callback is closed after the collback completes.
+func (c *Client) Writer(fn runnable) error {
+	return c.bolt.Update(func(tx *bolt.Tx) error {
+		c.Tx = tx
+		return fn()
+	})
+}
+
+// Reader adds a read-only transaction to the client and executes a callback.
+// The transaction is closed after the callback completes.
+func (c *Client) Reader(fn runnable) error {
+	return c.bolt.View(func(tx *bolt.Tx) error {
+		c.Tx = tx
+		return fn()
+	})
+}
+
+// Update existing value in Bolt.
+func (c *Client) Update(key []byte, value store.Value) error {
+	return c.save(key, value)
+}
+
+// Remove bucket item at key.
+func (c *Client) Remove(key []byte, kind store.Value) error {
+	return c.Writer(func() error {
+		bucket := c.Tx.Bucket(kind.BucketName())
+		if bucket == nil {
+			return nil
+		}
+		return bucket.Delete(key)
+	})
+}
+
+// Get value at key and load into an interface.
+func (c *Client) Get(key []byte, empty store.Value) error {
+	return c.Reader(func() error {
+		bucket := c.Tx.Bucket(empty.BucketName())
+		if bucket == nil {
+			return ErrNoBucket
+		}
+		value := bucket.Get(key)
+		return Decode(value, empty)
+	})
+}
+
+// save value in Bolt.
+// See https://github.com/boltdb/bolt
+func (c *Client) save(key []byte, value store.Value) error {
+	return c.Writer(func() error {
+		bucket, err := c.Tx.CreateBucketIfNotExists(value.BucketName())
+		if err != nil {
+			return err
+		}
+		data, err := Encode(value)
+		if err != nil {
+			return err
+		}
+		err = bucket.Put(key, data)
+		if err != nil {
+			return err
+		}
+		return c.saveIndexes(key, value.IndexMap())
+	})
+}
+
+func (c *Client) Close() {
+	c.bolt.Close()
+	c.IsConnected = false
+}

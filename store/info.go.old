@@ -1,0 +1,70 @@
+package store
+
+import (
+	"reflect"
+	"strings"
+)
+
+type (
+	ItemInfo struct {
+		BucketName []byte
+		Fields     map[string]*FieldInfo
+	}
+
+	FieldInfo struct {
+		Name      string
+		IndexName []byte
+	}
+)
+
+var Info map[string]ItemInfo
+
+func Parse(v interface{}) (*ItemInfo, error) {
+	r := reflect.ValueOf(v)
+	if r.Kind() == reflect.Ptr {
+		r = r.Elem()
+	}
+	typ := r.Type()
+	info := &ItemInfo{}
+	info.Fields = make(map[string]*FieldInfo)
+
+	fieldCount := r.NumField()
+
+	for i := 0; i < fieldCount; i++ {
+		field := typ.Field(i)
+		value := r.Field(i)
+
+		if field.PkgPath != "" {
+			continue
+		}
+
+		err := parseField(&value, &field, info)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return info, nil
+}
+
+func parseField(r *reflect.Value, field *reflect.StructField, info *ItemInfo) error {
+	var f *FieldInfo
+
+	tag := field.Tag.Get("index")
+	if tag != "" {
+		f = &FieldInfo{
+			Name: field.Name,
+		}
+
+		tags := strings.Split(tag, ",")
+
+		for _, tag := range tags {
+			switch tag {
+			case "unique":
+				f.IndexName = []byte(tag)
+			}
+		}
+	}
+
+	return nil
+}
